@@ -58,6 +58,7 @@ class CNN(nn.Module):
     the linear layers.
     """
 
+
 class NNModel:
     def __init__(self, network, learning_rate):
         """
@@ -70,12 +71,16 @@ class NNModel:
                                         transforms.Normalize((0.5,), (0.5,))])
 
         # Download and load the training data
-        trainset = datasets.KMNIST(root='./data', train=True, download=True, transform=transform)
-        self.trainloader = torch.utils.data.DataLoader(trainset, batch_size=64, shuffle=False)
+        trainset = datasets.KMNIST(
+            root='./data', train=True, download=True, transform=transform)
+        self.trainloader = torch.utils.data.DataLoader(
+            trainset, batch_size=64, shuffle=False)
 
         # Download and load the test data
-        testset = datasets.KMNIST(root='./data', train=False, download=True, transform=transform)
-        self.testloader = torch.utils.data.DataLoader(testset, batch_size=64, shuffle=False)
+        testset = datasets.KMNIST(
+            root='./data', train=False, download=True, transform=transform)
+        self.testloader = torch.utils.data.DataLoader(
+            testset, batch_size=64, shuffle=False)
 
         self.model = network
 
@@ -104,6 +109,24 @@ class NNModel:
 
            2) An int 8x8 numpy array of labels corresponding to this tiling
         """
+
+        first_batch = next(iter(self.trainloader))
+
+        images = first_batch[0].reshape(8, 8, 28, 28).permute(
+            [0, 2, 1, 3]).reshape(224, 224).numpy()
+        labels = first_batch[1].view((8, 8)).numpy()
+        return images, labels
+
+        # images_column = []
+        # images_row = []
+        # for i, image in enumerate(images):
+        #     images_column.append(image)
+        #     if (i+1) % 8 == 0:
+        #         images_row.append(torch.cat(tuple(images_column), 1))
+        #         images_column = []
+        # images_array = torch.cat(tuple(images_row), 0)
+
+        # return images_array.numpy(), labels
 
     def train_step(self):
         """

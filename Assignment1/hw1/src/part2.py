@@ -33,7 +33,8 @@ class LinearModel:
         """
         self.num_inputs = num_inputs
         self.lr = learning_rate
-        self.weights = np.asarray([1.0, -1.0, 0.0])  # Initialize as straight line
+        # Initialize as straight line
+        self.weights = np.asarray([1.0, -1.0, 0.0])
 
     def activation(self, x):
         """
@@ -41,6 +42,13 @@ class LinearModel:
         a float, but raises a Value error if a boolean, list or numpy array is passed in
         hint: consider np.exp()
         """
+        try:
+            if not isinstance(x, float):
+                raise ValueError
+            return 1/(1+np.exp(-x))
+        except ValueError as e:
+            print('ValueError: activation function only accepts float number')
+            return
 
     def forward(self, inputs):
         """
@@ -49,6 +57,8 @@ class LinearModel:
         inputs is a numpy array. The bias term is the last element in self.weights.
         hint: call the activation function you have implemented above.
         """
+        inputs = np.append(inputs, 1)
+        return self.activation(np.dot(inputs, self.weights))
 
     @staticmethod
     def loss(prediction, label):
@@ -56,6 +66,7 @@ class LinearModel:
         TODO: Return the cross entropy for the given prediction and label
         hint: consider using np.log()
         """
+        return (-label*np.log(prediction)) - ((1-label)*np.log(1-prediction))
 
     @staticmethod
     def error(prediction, label):
@@ -65,6 +76,7 @@ class LinearModel:
         For example, if label= 1 and the prediction was 0.8, return 0.2
                      if label= 0 and the preduction was 0.43 return -0.43
         """
+        return label-prediction
 
     def backward(self, inputs, diff):
         """
@@ -72,7 +84,7 @@ class LinearModel:
 
         We take advantage of the simplification shown in Lecture 2b, slide 23,
         to compute the gradient directly from the differential or difference
-        dE/ds = z - t (which is passed in as diff)
+        -dE/ds = z - t (which is passed in as diff)
 
         The resulting weight update should look essentially the same as for the
         Perceptron Learning Rule (shown in Lectures 1c, slide 11) except that
@@ -81,6 +93,8 @@ class LinearModel:
 
         Note: Numpy arrays are passed by reference and can be modified in-place
         """
+        inputs = np.append(inputs, 1)
+        self.weights = self.weights + (diff*self.lr*inputs)
 
     def plot(self, inputs, marker):
         """
@@ -92,31 +106,36 @@ class LinearModel:
         ymax = inputs[:, 1].max() * 1.1
 
         x = np.arange(xmin * 1.3, xmax * 1.3, 0.1)
-        plt.scatter(inputs[:25, 0], inputs[:25, 1], c="C0", edgecolors='w', s=100)
-        plt.scatter(inputs[25:, 0], inputs[25:, 1], c="C1", edgecolors='w', s=100)
+        plt.scatter(inputs[:25, 0], inputs[:25, 1],
+                    c="C0", edgecolors='w', s=100)
+        plt.scatter(inputs[25:, 0], inputs[25:, 1],
+                    c="C1", edgecolors='w', s=100)
 
         plt.xlim((xmin, xmax))
         plt.ylim((ymin, ymax))
-        plt.plot(x, -(self.weights[0] * x + self.weights[2]) / self.weights[1], marker, alpha=0.6)
+        plt.plot(x, -(self.weights[0] * x + self.weights[2]
+                      ) / self.weights[1], marker, alpha=0.6)
         plt.title("Data and decision boundary")
         plt.xlabel("x1")
         plt.ylabel("x2").set_rotation(0)
 
 
 def main():
-    inputs, labels = pkl.load(open("../data/binary_classification_data.pkl", "rb"))
+    inputs, labels = pkl.load(
+        open("../data/binary_classification_data.pkl", "rb"))
 
     epochs = 400
     model = LinearModel(num_inputs=inputs.shape[1], learning_rate=0.01)
 
     for i in range(epochs):
         num_correct = 0
+        cost = 0
         for x, y in zip(inputs, labels):
             # Get prediction
             output = model.forward(x)
 
             # Calculate loss
-            cost = model.loss(output, y)
+            cost += model.loss(output, y)
 
             # Calculate difference or differential
             diff = model.error(output, y)
@@ -128,7 +147,8 @@ def main():
             preds = output > 0.5  # 0.5 is midline of sigmoid
             num_correct += int(preds == y)
 
-        print(f" Cost: {cost:8.6f} Accuracy: {num_correct / len(inputs) * 100}%")
+        print(
+            f" Cost: {cost/len(inputs):.2f} Accuracy: {num_correct / len(inputs) * 100:.2f}%")
         model.plot(inputs, "C2--")
     model.plot(inputs, "k")
     plt.show()
